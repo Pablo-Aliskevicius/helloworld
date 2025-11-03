@@ -14,7 +14,7 @@ Run:
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
+#include <pthread.h> // E:\Users\User\vcpkg\packages\pthreads_x64-windows\include
 #include <ctype.h>
 #include <errno.h>
 
@@ -38,6 +38,7 @@ typedef struct {
 // We also use static functions to limit their scope to this file and avoid name clashes.
 static void queue_init(queue_t* q) {
     q->head = q->tail = NULL;
+    // Default attributes are fine.
     pthread_mutex_init(&q->mutex, NULL);
     pthread_cond_init(&q->cond_input_is_available, NULL);
 }
