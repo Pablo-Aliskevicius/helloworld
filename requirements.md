@@ -1,4 +1,5 @@
 
+
 # Create a C program with the following specifications:
 
 - Must be written in C   
@@ -26,6 +27,4 @@ Each thread will perform a different task:
 
 1. Each thread will manage a queue of lines to process
 2. function main will read each line from the file and distribute them to the threads' queues in a round-robin fashion
-
-
 
