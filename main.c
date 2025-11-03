@@ -20,6 +20,7 @@ Run:
 
 /* Simple linked queue holding char* lines (NULL line is sentinel) */
 typedef struct node {
+	// To make it generic, we could have void* data.
     char* line;
     struct node* next;
 } node_t;
