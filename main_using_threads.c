@@ -1,22 +1,27 @@
 /*
 C11 threads version of the line-processing program.
 
-Build (Linux, gcc):
-  gcc -std=gnu11 -Wall -Wextra -O2 -pthread -o line_counters main.c
+Build (Linux, gcc, release):
+   gcc -std=gnu11 -Wall -Wextra -O2 -pthread -o line_counters main_using_threads.c
+
+Remove the -O2 optimization and add -g for debugging. Otherwise won't stop at breakpoints.
+   gcc -std=gnu11 -Wall -Wextra -g -pthread -o line_counters main_using_threads.c
 
 Run:
   ./line_counters input.txt
 */
-
+#include <sys/types.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <threads.h>
+#include <unistd.h>
 #include <ctype.h>
 #include <errno.h>
 
 /* linked queue node */
-typedef struct node {
+typedef struct node {// match return type of getline.
     char* line;
     struct node* next;
 } node_t;
@@ -40,7 +45,7 @@ static void queue_destroy(queue_t* q) {
     mtx_destroy(&q->mutex);
     cnd_destroy(&q->cond);
 }
-
+// match return type of getline.
 static int queue_enqueue(queue_t* q, char* line) {
     node_t* n = malloc(sizeof(node_t));
     if (!n) return -1;
@@ -68,7 +73,8 @@ static char* queue_dequeue(queue_t* q) {
     }
     node_t* n = q->head;
     q->head = n->next;
-    if (q->head == NULL) q->tail = NULL;
+    if (q->head == NULL) 
+        q->tail = NULL;
     mtx_unlock(&q->mutex);
 
     char* line = n->line;
@@ -119,7 +125,7 @@ typedef struct {
 static int worker(void* arg) {
     worker_arg_t* w = (worker_arg_t*)arg;
     unsigned long long total = 0ULL;
-
+    printf("Thread mode %d running in process %d\n", w->mode, (int) getpid());
     for (;;) {
         char* line = queue_dequeue(w->queue);
         if (line == NULL) break; /* sentinel => no more data */
@@ -134,6 +140,7 @@ static int worker(void* arg) {
     }
 
     w->total = total;
+    printf("Thread mode %d running in process %d returning total %lld\n", w->mode, (int) getpid(), w->total);
     return 0;
 }
 
@@ -148,7 +155,7 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Failed to open '%s': %s\n", argv[1], strerror(errno));
         return EXIT_FAILURE;
     }
-
+    printf("%s running with pid=%d on file %s\n", argv[0], (int) getpid(), argv[1]);
     queue_t queues[3];
     for (int i = 0; i < 3; ++i) queue_init(&queues[i]);
 
@@ -168,7 +175,7 @@ int main(int argc, char** argv) {
     /* Read lines and distribute round-robin using getline (POSIX) */
     char* linebuf = NULL;
     size_t cap = 0;
-    ssize_t nread;
+    ssize_t nread; 
     int idx = 0;
     size_t line_count = 0;
 
@@ -206,9 +213,9 @@ int main(int argc, char** argv) {
         queue_destroy(&queues[i]);
     }
 
-    printf("Total words   : %llu\n", totals[0]);
-    printf("Total chars   : %llu\n", totals[1]);
-    printf("Total vowels  : %llu\n", totals[2]);
+    printf("One third words   : %llu\n", totals[0]);
+    printf("One third chars   : %llu\n", totals[1]);
+    printf("One third vowels  : %llu\n", totals[2]);
     printf("Total lines   : %zu\n", line_count);
 
     return EXIT_SUCCESS;

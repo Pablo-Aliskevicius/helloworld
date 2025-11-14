@@ -11,6 +11,8 @@ Run:
   ./line_counters input.txt
 */
 
+#include <sys/types.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
