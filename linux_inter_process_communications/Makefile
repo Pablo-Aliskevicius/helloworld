@@ -6,6 +6,7 @@ all: ipc
 
 ipc: main.c
 	$(CC) $(CFLAGS) -o ipc main.c $(LDFLAGS)
+	ls -l ipc
 
 clean:
 	rm -f ipc
