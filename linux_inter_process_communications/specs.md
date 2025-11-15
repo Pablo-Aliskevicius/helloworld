@@ -135,6 +135,7 @@ You may test your program using:
 strace -f ./ipc
 ```
 
+(Use the option `-o filename` to separate `strace` output from `ipc` output)
 or view IPC objects (for message queues / shared memory) using:
 
 ```bash

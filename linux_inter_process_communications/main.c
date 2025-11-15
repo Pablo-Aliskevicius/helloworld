@@ -60,8 +60,9 @@ _Noreturn void producer_process(void) {
         if (mq_send(mq_b, (const char *)&i, sizeof(i), 0) == -1) {
             perror("producer: mq_send B");
         }
+         printf("[P: pid %d] produced %d\n", getpid(), i);
         // small sleep to avoid flooding (and make output readable)
-        usleep(10000);
+        // usleep(10000);
     }
 
     // Send termination marker (-1)
@@ -72,7 +73,7 @@ _Noreturn void producer_process(void) {
     if (mq_send(mq_b, (const char *)&term, sizeof(term), 0) == -1) {
         perror("producer: mq_send term B");
     }
-
+    printf("[P: pid %d] done producing.\n", getpid());
     mq_close(mq_a);
     mq_close(mq_b);
     exit(EXIT_SUCCESS);

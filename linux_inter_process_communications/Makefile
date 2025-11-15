@@ -9,3 +9,6 @@ ipc: main.c
 
 clean:
 	rm -f ipc
+
+run: ipc
+	./ipc
