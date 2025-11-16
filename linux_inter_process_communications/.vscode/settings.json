@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/pablo/projects/helloworld/linux_inter_process_communications",
+            "binaryPath": "/home/pablo/projects/helloworld/linux_inter_process_communications/ipc",
+            "binaryArgs": []
+        }
+    ]
+}

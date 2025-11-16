@@ -8,6 +8,7 @@
 #include <string.h>
 #include <errno.h>
 #include <signal.h>
+#include "main.h"
 
 // POSIX message queue names
 #define MQ_A  "/ipc_consumerA"
@@ -127,67 +128,49 @@ _Noreturn void consumer_b_process(void) {
     exit(EXIT_SUCCESS);
 }
 
-int main(void) {
-    pid_t pid_producer, pid_a, pid_b;
-    struct mq_attr attr;
 
+int initialize_signal_handlers(int* retFlag)
+{
     // Install signal handler for SIGUSR1
+    *retFlag = EXIT_FAILURE;
     struct sigaction sa;
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = sigusr1_handler;
-    if (sigaction(SIGUSR1, &sa, NULL) == -1) {
+    if (sigaction(SIGUSR1, &sa, NULL) == -1)
+    {
         perror("sigaction");
         return EXIT_FAILURE;
     }
+    *retFlag = EXIT_SUCCESS;
+    return EXIT_SUCCESS;
+}
+
+int main(void) {
+
+
+    // Initialize signal handlers, scoped block to limit retFlag scope
+    {
+        int retFlag;
+        int retVal = initialize_signal_handlers(&retFlag);
+        if (retFlag == EXIT_FAILURE)
+            return retVal;
+    }
 
     // Create message queues (parent creates so attributes are set)
-    attr.mq_flags = 0;
-    attr.mq_maxmsg = 10;
-    attr.mq_msgsize = sizeof(int32_t);
-    attr.mq_curmsgs = 0;
-
-    mqd_t q;
-    q = mq_open(MQ_A, O_CREAT | O_EXCL | O_RDWR, 0600, &attr);
-    if (q == (mqd_t)-1) {
-        if (errno == EEXIST) {
-            mq_unlink(MQ_A);
-            q = mq_open(MQ_A, O_CREAT | O_EXCL | O_RDWR, 0600, &attr);
-            if (q == (mqd_t)-1) {
-                perror("mq_open A create");
-                return EXIT_FAILURE;
-            }
-        } else {
-            perror("mq_open A");
-            return EXIT_FAILURE;
-        }
+    {
+        int retFlag;
+        int retVal = initialize_queues(&retFlag);
+        if (retFlag == EXIT_FAILURE)
+            return retVal;
     }
-    mq_close(q);
 
-    q = mq_open(MQ_B, O_CREAT | O_EXCL | O_RDWR, 0600, &attr);
-    if (q == (mqd_t)-1) {
-        if (errno == EEXIST) {
-            mq_unlink(MQ_B);
-            q = mq_open(MQ_B, O_CREAT | O_EXCL | O_RDWR, 0600, &attr);
-            if (q == (mqd_t)-1) {
-                perror("mq_open B create");
-                mq_unlink(MQ_A);
-                return EXIT_FAILURE;
-            }
-        } else {
-            perror("mq_open B");
-            // Main difference between C and C++: you must clean up unrelated resources
-            mq_unlink(MQ_A);
-            return EXIT_FAILURE;
-        }
-    }
-    mq_close(q);
+    pid_t pid_producer = 0, pid_a = 0, pid_b = 0;
 
     // Fork producer first
     pid_producer = fork();
     if (pid_producer == -1) {
         perror("fork producer");
-        mq_unlink(MQ_A);
-        mq_unlink(MQ_B);
+        cleanup_queues();
         return EXIT_FAILURE;
     }
     if (pid_producer == 0) {
@@ -205,8 +188,7 @@ int main(void) {
     if (pid_a == -1) {
         perror("fork consumer A");
         kill(pid_producer, SIGTERM);
-        mq_unlink(MQ_A);
-        mq_unlink(MQ_B);
+        cleanup_queues();
         return EXIT_FAILURE;
     }
     if (pid_a == 0) {
@@ -218,8 +200,7 @@ int main(void) {
         perror("fork consumer B");
         kill(pid_producer, SIGTERM);
         kill(pid_a, SIGTERM);
-        mq_unlink(MQ_A);
-        mq_unlink(MQ_B);
+        cleanup_queues();
         return EXIT_FAILURE;
     }
     if (pid_b == 0) {
@@ -233,12 +214,77 @@ int main(void) {
     waitpid(pid_b, &status, 0);
 
     // Cleanup
-    if (mq_unlink(MQ_A) == -1) {
+    cleanup_queues();
+
+    return EXIT_SUCCESS;
+}
+
+void cleanup_queues()
+{
+    if (mq_unlink(MQ_A) == -1)
+    {
         perror("mq_unlink A");
     }
-    if (mq_unlink(MQ_B) == -1) {
+    if (mq_unlink(MQ_B) == -1)
+    {
         perror("mq_unlink B");
     }
+}
 
+int initialize_queues(int* retFlag)
+{
+    *retFlag = 1;
+    struct mq_attr attr;
+    attr.mq_flags = 0;
+    attr.mq_maxmsg = 10;
+    attr.mq_msgsize = sizeof(int32_t);
+    attr.mq_curmsgs = 0;
+
+    mqd_t q;
+    q = mq_open(MQ_A, O_CREAT | O_EXCL | O_RDWR, 0600, &attr);
+    if (q == (mqd_t)-1)
+    {
+        if (errno == EEXIST)
+        {
+            mq_unlink(MQ_A);
+            q = mq_open(MQ_A, O_CREAT | O_EXCL | O_RDWR, 0600, &attr);
+            if (q == (mqd_t)-1)
+            {
+                perror("mq_open A create");
+                return EXIT_FAILURE;
+            }
+        }
+        else
+        {
+            perror("mq_open A");
+            return EXIT_FAILURE;
+        }
+    }
+    mq_close(q);
+
+    q = mq_open(MQ_B, O_CREAT | O_EXCL | O_RDWR, 0600, &attr);
+    if (q == (mqd_t)-1)
+    {
+        if (errno == EEXIST)
+        {
+            mq_unlink(MQ_B);
+            q = mq_open(MQ_B, O_CREAT | O_EXCL | O_RDWR, 0600, &attr);
+            if (q == (mqd_t)-1)
+            {
+                perror("mq_open B create");
+                mq_unlink(MQ_A);
+                return EXIT_FAILURE;
+            }
+        }
+        else
+        {
+            perror("mq_open B");
+            // Main difference between C and C++: you must clean up unrelated resources
+            mq_unlink(MQ_A);
+            return EXIT_FAILURE;
+        }
+    }
+    mq_close(q);
+    *retFlag = 0;
     return EXIT_SUCCESS;
 }
