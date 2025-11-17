@@ -41,7 +41,4 @@ extern Queue* resultQueueB;
 /* Shared producer state. */
 extern ProducerState producerState;
 
-/* Flag to signal consumers to exit. */
-extern _Atomic(int) shouldExit;
-
 #endif /* SHARED_H */

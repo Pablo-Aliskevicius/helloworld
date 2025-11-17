@@ -23,6 +23,8 @@ extern Queue* queueB;
  *   number: The number to check (must be positive)
  *
  * Returns: 1 if prime, 0 if not prime.
+ * Note that numbers less than 2 are not prime.
+ * See https://en.wikipedia.org/wiki/Prime_number
  */
 static int IsPrime(int32_t number)
 {

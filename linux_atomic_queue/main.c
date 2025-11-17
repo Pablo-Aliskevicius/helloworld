@@ -26,9 +26,6 @@ ProducerState producerState = {
     .producerFinished = 0
 };
 
-/* Global flag to signal consumers to exit. */
-_Atomic(int) shouldExit = 0;
-
 /* Global in-flight counter definition. */
 _Atomic(int32_t) inFlightCount = 0;
 

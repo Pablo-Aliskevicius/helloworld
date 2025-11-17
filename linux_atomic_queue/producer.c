@@ -1,10 +1,7 @@
-#define _POSIX_C_SOURCE 200809L
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdatomic.h>
-#include <time.h>
 #include <pthread.h>
 #include "queue.h"
 #include "shared.h"
@@ -59,8 +56,9 @@ void* ProducerThread(void* arg)
         extern _Atomic(int32_t) inFlightCount;
         atomic_fetch_add_explicit(&inFlightCount, 1, memory_order_acq_rel);
         count++;
-        struct timespec ts = { 0, 10000 }; /* 100 microseconds */
-        nanosleep(&ts, NULL);
+        
+        /* Yield to allow other threads to work. */
+        sched_yield();
     }
 
     fclose(file);
@@ -74,14 +72,9 @@ void* ProducerThread(void* arg)
     /*
      * Set the finished flag to signal main thread.
      * Use memory_order_release to ensure all prior stores are visible.
+     * Consumers will see this flag with memory_order_acquire, and stop processing.
      */
     atomic_store_explicit(&producerState.producerFinished, 1, memory_order_release);
-
-    /*
-     * Signal consumer threads to exit by setting the global exit flag.
-     * Use memory_order_release to ensure visibility.
-     */
-    atomic_store_explicit(&shouldExit, 1, memory_order_release);
 
     return NULL;
 }
