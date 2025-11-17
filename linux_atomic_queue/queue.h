@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <stdatomic.h>
 
+// See https://www.cs.rochester.edu/u/scott/papers/1996_PODC_queues.pdf
+// for the Michael Scott and Maged M. Michael lock-free queue algorithm.
+
 /* Lock-free queue node structure for holding integer data. */
 typedef struct QueueNode
 {
