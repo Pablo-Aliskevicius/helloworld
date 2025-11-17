@@ -37,4 +37,9 @@ rebuild: clean all
 run: $(TARGET)
 	./$(TARGET) input.txt
 
-.PHONY: all clean distclean rebuild
+# Test for leak memory (requires valgrind)
+leaktest: $(TARGET)
+	valgrind --leak-check=full ./$(TARGET) input.txt
+	
+
+.PHONY: all clean distclean rebuild run leaktest

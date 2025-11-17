@@ -65,8 +65,8 @@ static void FormatTimestamp(struct timespec ts, char* buf, size_t bufSize)
     if (len >= bufSize)
         return;
 
-    int ms = (int)(ts.tv_nsec / 1000000);
-    snprintf(buf + len, bufSize - len, ".%03d", ms);
+    int microsecs = (int)(ts.tv_nsec / 1000);
+    snprintf(buf + len, bufSize - len, ".%06d", microsecs);
 }
 
 /*
@@ -185,16 +185,6 @@ static void PrintResultsLive(void)
         }
     }
 }
-
-/*
- * WaitForProducerCompletion: Wait for producer to finish reading the file.
- *
- * Busy-waits with yields while checking the atomic producerFinished flag.
- * Once finished, prints the completion message.
- *
- * Parameters: None (uses global producerState)
- */
-/* Note: printing is handled live by PrintResultsLive, so this helper is no longer used. */
 
 /*
  * Main: Initialize threads, coordinate execution, and display results.
