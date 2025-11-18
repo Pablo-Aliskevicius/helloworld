@@ -1,0 +1,19 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-std=c17",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-O2",
+      "-c",
+      "-o",
+      "consumerB.o",
+      "consumerB.c"
+    ],
+    "directory": "/home/pablo/projects/helloworld/linux_atomic_queue",
+    "file": "/home/pablo/projects/helloworld/linux_atomic_queue/consumerB.c",
+    "output": "/home/pablo/projects/helloworld/linux_atomic_queue/consumerB.o"
+  }
+]

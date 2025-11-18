@@ -1,0 +1,28 @@
+---
+# Enable diagnostics for C code (disables irrelevant C++ checks)
+Checks: >
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  readability-*,
+  performance-*,
+  portability-*,
+  modernize-use-nullptr,
+  hicpp-*,
+  cppcoreguidelines-*,
+  cert-*,
+  linuxkernel-*,
+  clang-diagnostic-*,
+
+# Disable checks that only apply to C++
+CheckOptions:
+  # C++-only stuff should stay off
+  modernize-use-nullptr.Checks: 'false'
+  cppcoreguidelines-avoid-non-const-global-variables.IgnoreMacro: 'true'
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+FormatStyle: none
+SystemHeaders:   false
+...
+

@@ -42,4 +42,9 @@ leaktest: $(TARGET)
 	valgrind --leak-check=full ./$(TARGET) input.txt
 	
 
+clang: $(TARGET)
+    # Should load tests from .clang-tidy file
+	# --dump-config .clang-tidy-generated to generate one
+	clang-tidy -p . *.c 
+
 .PHONY: all clean distclean rebuild run leaktest

@@ -43,10 +43,10 @@ void* ConsumerAThread(void* arg)
 
     while (1) {
         /* Try to dequeue a number pointer from consumer A's queue. */
-        void* vp = NULL;
-        if (QueueDequeue(queueA, &vp)) {
-            int32_t number = *(int32_t*)vp;
-            free(vp);
+        void* vp_number = NULL;
+        if (QueueDequeue(queueA, &vp_number)) {
+            int32_t number = *(int32_t*)vp_number;
+            free(vp_number);
 
             int64_t square = SquareNumber(number);
 

@@ -24,7 +24,7 @@ extern Queue* queueB;
  *
  * Returns: 1 if prime, 0 if not prime.
  * Note that numbers less than 2 are not prime.
- * See https://en.wikipedia.org/wiki/Prime_number
+ * See https://en.wikipedia.org/wiki/Prime_number, "Primality of one"
  */
 static int IsPrime(int32_t number)
 {

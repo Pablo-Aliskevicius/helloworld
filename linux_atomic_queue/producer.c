@@ -32,24 +32,24 @@ void* ProducerThread(void* arg)
         return NULL;
     }
 
-    int32_t number;
+    int32_t number = 0;
     int32_t count = 0;
 
     /* Read integers from file and distribute based on even/odd. */
     while (fscanf(file, "%d", &number) == 1) {
-        int32_t* p = malloc(sizeof(int32_t));
-        if (!p) {
+        int32_t* p_number = malloc(sizeof(int32_t));
+        if (!p_number) {
             break;
         }
-        *p = number;
+        *p_number = number;
 
         if (number % 2 == 0) {
             /* Even number: send to consumer A. */
-            QueueEnqueue(queueA, p);
+            QueueEnqueue(queueA, p_number);
         }
         else {
             /* Odd number: send to consumer B. */
-            QueueEnqueue(queueB, p);
+            QueueEnqueue(queueB, p_number);
         }
 
         /* Increment global in-flight counter to indicate work outstanding. */
