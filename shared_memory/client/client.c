@@ -127,6 +127,9 @@ static int request_server_offset(uint32_t length, uint32_t *offset)
     (void)length;
     (void)offset;
     /* In this simplified version, we allocate sequentially */
+    // BUG: The offset allocation is not synchronized with the server
+    // In a real implementation, the client should send a request to the server
+    // and wait for a response with the allocated offset.
     static uint32_t allocated = 0;
     if (allocated + length > SHARED_MEMORY_SIZE) {
         return -1;
@@ -244,7 +247,7 @@ int main(void)
         // printf("sel_rv = %d\n", sel_rv); // DEBUG
         if (sel_rv == 0) {
             // putchar('.'); // DEBUG
-            usleep(1000000); // Wait for user input
+            usleep(10000); // Wait for user input
             continue;  // Loop again to check messages
         } else if (sel_rv < 0) {
             perror("select");

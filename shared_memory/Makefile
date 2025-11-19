@@ -1,5 +1,5 @@
 # Makefile for Shared Memory Chat Application
-# C17 standard with Kernighan braces style
+# C17 standard, with warnings and optimizations enabled
 
 CC := gcc
 CFLAGS := -std=c17 -Wall -Wextra -Wpedantic -O2

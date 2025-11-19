@@ -7,8 +7,10 @@
 #include <unistd.h>
 #include <sys/types.h>
 
+// Use `uuidgen` to generate unique identifiers for shared memory and message queues
+
 /* IPC Constants */
-#define SHARED_MEMORY_NAME "/shared_memory_chat"
+#define SHARED_MEMORY_NAME "/71dcbdfc-8b5c-45b6-93cf-5e961df6f4f4-shared_memory_chat"
 #define GLOBAL_QUEUE_NAME "/71dcbdfc-8b5c-45b6-93cf-5e961df6f4f4-listener"
 #define MAX_CLIENTS 5
 #define MAX_MESSAGE_SIZE 1024
@@ -16,7 +18,7 @@
 
 /* Special messages */
 #define DISCONNECT_MESSAGE "6b540d1b-cd12-4bd9-bdfd-64cbcf1ed258"
-#define DISCONNECT_ACK_MESSAGE "disconnect-ack"
+#define DISCONNECT_ACK_MESSAGE "6b540d1b-cd12-4bd9-bdfd-64cbcf1ed258-disconnect-ack"
 #define DISCONNECT_TIMEOUT_MS 100
 
 /* Message types for queue communication */
