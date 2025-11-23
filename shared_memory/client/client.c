@@ -11,6 +11,7 @@
 #include <mqueue.h>
 #include <errno.h>
 #include <ctype.h>
+#include <poll.h>
 
 /* Global variables */
 static int shm_fd = -1;
@@ -27,6 +28,7 @@ static void disconnect_from_server(void);
 static int request_server_offset(uint32_t length, uint32_t *offset);
 static void notify_string_available(uint32_t offset, uint32_t length);
 static int receive_messages(void);
+static int check_for_exit(char input[1024]);
 static char* str_lower(char *str);
 
 /* Clean up resources on exit */
@@ -191,12 +193,10 @@ static int receive_messages(void)
     return msg.mtype == MSG_DISCONNECT_REQUEST ? 0 : 1;
 }
 
-static int peek_stdin(){
-    struct timeval tv = {0L, 0L};
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(STDIN_FILENO, &fds);
-    return select(STDIN_FILENO + 1, &fds, NULL, NULL, &tv) > 0;
+/* Get the file descriptor for the message queue */
+static int get_mq_fd(void)
+{
+    return (int)client_queue;
 }
 
 /* Main client loop */
@@ -231,72 +231,86 @@ int main(void)
     client_pid = getpid();
     printf("Process ID: %d\n", client_pid);
     printf("Enter message (type 'bye' or 'exit' to quit):\n");
+    gt_promted = printf("> ");
+    fflush(stdout);
 
-    /* Main interaction loop */
+    /* Main interaction loop using poll */
     while (1) {
-        /* Check for broadcast messages; if the server was disconnected, break. */
-        if (!receive_messages()) break;
+        struct pollfd fds[2];
+        int poll_ret;
 
-        /* Prompt user for input */
-        if (!gt_promted) {
-            printf("> ");
-            gt_promted = -1;
-        }
-        fflush(stdout);
-        int sel_rv = peek_stdin();
-        // printf("sel_rv = %d\n", sel_rv); // DEBUG
-        if (sel_rv == 0) {
-            // putchar('.'); // DEBUG
-            usleep(10000); // Wait for user input
-            continue;  // Loop again to check messages
-        } else if (sel_rv < 0) {
-            perror("select");
+        /* Set up poll file descriptors: stdin and message queue */
+        fds[0].fd = STDIN_FILENO;
+        fds[0].events = POLLIN;
+        fds[0].revents = 0;
+
+        fds[1].fd = get_mq_fd();
+        fds[1].events = POLLIN;
+        fds[1].revents = 0;
+
+        /* Wait for input on either stdin or message queue */
+        poll_ret = poll(fds, 2, 100);
+        if (poll_ret < 0) {
+            perror("poll");
             break;
         }
 
-        if (fgets(input, sizeof(input), stdin) == NULL) {
-            break;
-        }
-        gt_promted = 0;
-        /* Remove trailing newline */
-        length = strlen(input);
-        if (length > 0 && input[length - 1] == '\n') {
-            input[length - 1] = '\0';
-            length--;
+        /* Process incoming message queue events */
+        if (fds[1].revents & POLLIN) {
+            if (!receive_messages())
+                break;  /* Server requested disconnect */
         }
 
-        if (length == 0) {
-            continue;
-        }
+        /* Process stdin events */
+        if (fds[0].revents & POLLIN) {
+            if (fgets(input, sizeof(input), stdin) == NULL) {
+                break;
+            }
 
-        /* Check for exit commands */
-        char input_lower[MAX_MESSAGE_SIZE];
-        strcpy(input_lower, input);
-        str_lower(input_lower);
+            /* Remove trailing newline */
+            length = strlen(input);
+            if (length > 0 && input[length - 1] == '\n') {
+                input[length - 1] = '\0';
+                length--;
+            }
 
-        if (strcmp(input_lower, "bye") == 0 || strcmp(input_lower, "exit") == 0) {
-            break;
-        }
+            if (length == 0) {
+                gt_promted = printf("> ");
+                fflush(stdout);
+                continue;
+            }
 
-        /* Request offset from server */
-        if (request_server_offset(length, &offset) < 0) {
-            fprintf(stderr, "No more space in shared memory.\n");
-            continue;
-        }
+            if (check_for_exit(input)) {
+                break;
+            }
 
-        /* Write message to shared memory */
-        if (offset + length <= SHARED_MEMORY_SIZE) {
+            /* Request offset from server */
+            if (request_server_offset(length, &offset) < 0) {
+                fprintf(stderr,
+                    "No more space in shared memory.\n");
+                gt_promted = printf("> ");
+                fflush(stdout);
+                continue;
+            }
+
+            /* Write message to shared memory */
+            if (offset + length <= SHARED_MEMORY_SIZE) {
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-truncation"            
-            strncpy(&shared_mem->data[offset], input, length);
-#pragma GCC diagnostic pop            
-            shared_mem->data[offset + length] = '\0';
+#pragma GCC diagnostic ignored "-Wstringop-truncation"
+                strncpy(&shared_mem->data[offset], input, length);
+#pragma GCC diagnostic pop
+                shared_mem->data[offset + length] = '\0';
+            }
+
+            /* Notify server */
+            notify_string_available(offset, length);
+            gt_promted = printf("> ");
+            fflush(stdout);
+        } else if (poll_ret == 0 && !gt_promted) {
+            /* Timeout occurred, no activity - keep prompt visible */
+            gt_promted = printf("> ");
+            fflush(stdout);
         }
-
-        /* Notify server */
-        notify_string_available(offset, length);
-
-        usleep(10000);  /* Small delay for server processing */
     }
 
     /* Clean disconnect */
@@ -305,4 +319,24 @@ int main(void)
 
     cleanup();
     return EXIT_SUCCESS;
+}
+
+/// @brief Returns -1 if exit command is detected, 0 otherwise
+/// @param input 
+/// @return 
+int check_for_exit(char input[1024])
+{
+    /* Check for exit commands */
+    char input_lower[MAX_MESSAGE_SIZE];
+    strcpy(input_lower, input);
+    str_lower(input_lower);
+
+    if (strcmp(input_lower, "bye") == 0 ||
+        strcmp(input_lower, "exit") == 0)
+    {
+        {
+            return -1;
+        };
+    }
+    return 0;
 }

@@ -183,6 +183,7 @@ int main(void)
     /* Register signal handler for Ctrl-C */
     memset(&sa, 0, sizeof(sa));
     sa.sa_handler = signal_handler;
+    // sa.sa_flags = SA_SIGINFO; // Use with sa.sa_sigaction to get more info
     sigaction(SIGINT, &sa, NULL);
 
     /* Create or open shared memory */
