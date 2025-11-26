@@ -66,6 +66,12 @@ static void FormatTimestamp(struct timespec ts, char* buf, size_t bufSize)
     snprintf(buf + len, bufSize - len, ".%06d", microsecs);
 }
 
+static void FormatNow(char *tsbuf, size_t size) {
+	struct timespec now;
+	clock_gettime(CLOCK_REALTIME, &now);
+	FormatTimestamp(now, tsbuf, size);
+}
+
 /*
  * PrintResultsLive: Print messages from both consumers in the order they were sent.
  *
@@ -158,10 +164,8 @@ static void PrintResultsLive(void)
             && atomic_load_explicit(&inFlightCount, memory_order_acquire) == 0
             && !hasA && !hasB
             && QueueIsEmpty(resultQueueA) && QueueIsEmpty(resultQueueB)) {
-            struct timespec now;
-            clock_gettime(CLOCK_REALTIME, &now);
             char tsbuf[64];
-            FormatTimestamp(now, tsbuf, sizeof(tsbuf));
+			FormatNow(tsbuf, sizeof(tsbuf));
             int32_t total_count = atomic_load(&producerState.totalCount);
             printf("[%s] Finished reading the file, %d numbers read\n", tsbuf, total_count);
             printedFinished = 1;

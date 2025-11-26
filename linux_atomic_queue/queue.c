@@ -53,19 +53,19 @@ Queue* QueueCreate(void)
  */
 void QueueEnqueue(Queue *queue, void *value)
 {
+	/* Put the value in a new node */
     QueueNode *new_node = malloc(sizeof(QueueNode));
     new_node->value = value;
+    // This could be overkill, since no code outside this function has access to new_node.
     atomic_store_explicit(&new_node->next, NULL, memory_order_relaxed);
 
+    /* Atomically add the node to the queue. */
     while (1) {
-        QueueNode *tail = atomic_load_explicit(&queue->tail,
-                                                memory_order_acquire);
-        QueueNode *next = atomic_load_explicit(&tail->next,
-                                               memory_order_acquire);
+        QueueNode *tail = atomic_load_explicit(&queue->tail, memory_order_acquire);
+        QueueNode *next = atomic_load_explicit(&tail->next, memory_order_acquire);
 
         /* Re-check tail hasn't changed (avoid ABA). */
-        QueueNode *tail_check = atomic_load_explicit(&queue->tail,
-                                                      memory_order_acquire);
+        QueueNode *tail_check = atomic_load_explicit(&queue->tail, memory_order_acquire);
         if (tail != tail_check) {
             continue;  /* Tail changed, retry. */
         }
@@ -85,6 +85,7 @@ void QueueEnqueue(Queue *queue, void *value)
         }
         else {
             /* Tail is lagging behind; help advance it. */
+        	// tail == tail_check && tail->next != NULL, some other thread is enqueueing.
             atomic_compare_exchange_strong_explicit(
                 &queue->tail, &tail, next,
                 memory_order_release, memory_order_acquire);
@@ -116,16 +117,12 @@ void QueueEnqueue(Queue *queue, void *value)
 int QueueDequeue(Queue *queue, void **out_value)
 {
     while (1) {
-        QueueNode *head = atomic_load_explicit(&queue->head,
-                                               memory_order_acquire);
-        QueueNode *tail = atomic_load_explicit(&queue->tail,
-                                               memory_order_acquire);
-        QueueNode *next = atomic_load_explicit(&head->next,
-                                               memory_order_acquire);
+        QueueNode *head = atomic_load_explicit(&queue->head, memory_order_acquire);
+        QueueNode *tail = atomic_load_explicit(&queue->tail, memory_order_acquire);
+        QueueNode *next = atomic_load_explicit(&head->next, memory_order_acquire);
 
         /* Re-check head hasn't changed. */
-        QueueNode *head_check = atomic_load_explicit(&queue->head,
-                                                      memory_order_acquire);
+        QueueNode *head_check = atomic_load_explicit(&queue->head, memory_order_acquire);
         if (head != head_check) {
             continue;  /* Head changed, retry. */
         }
@@ -165,10 +162,8 @@ int QueueDequeue(Queue *queue, void **out_value)
  */
 int QueueIsEmpty(Queue *queue)
 {
-    QueueNode *head = atomic_load_explicit(&queue->head,
-                                           memory_order_acquire);
-    QueueNode *next = atomic_load_explicit(&head->next,
-                                           memory_order_acquire);
+    QueueNode *head = atomic_load_explicit(&queue->head, memory_order_acquire);
+    QueueNode *next = atomic_load_explicit(&head->next, memory_order_acquire);
     return next == NULL;
 }
 
