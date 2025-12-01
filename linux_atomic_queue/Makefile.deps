@@ -1,0 +1,5 @@
+consumerA.o: consumerA.c queue.h shared.h
+consumerB.o: consumerB.c queue.h shared.h
+main.o: main.c queue.h shared.h
+producer.o: producer.c queue.h shared.h
+queue.o: queue.c queue.h

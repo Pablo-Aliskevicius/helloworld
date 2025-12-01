@@ -29,6 +29,9 @@ HEADERS := queue.h shared.h
 OBJ_RELEASE = $(addprefix $(OBJ_DIR_RELEASE)/, $(SOURCES:.c=.o))
 OBJ_DEBUG = $(addprefix $(OBJ_DIR_DEBUG)/, $(SOURCES:.c=.o))
 
+# Recompile all targets if the compiler changes
+.EXTRA_PREREQS = $(CC)
+
 # Default target -> release build
 all: release
 
