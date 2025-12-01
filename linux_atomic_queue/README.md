@@ -10,25 +10,37 @@ Overview
 - Consumer B checks primality and sends a message to main.
 - The main thread prints messages and ensures a clean shutdown.
 
-Build
+Build (release)
 
 ```bash
 cd /path/to/linux_atomic_queue
 make
 ```
+Build (debug)
+
+```bash
+cd /path/to/linux_atomic_queue
+make debug
+```
 
 Run
 
 ```bash
-./atomic_queue input.txt
+make run
 ```
+
+Run debug
+```bash
+make run_dbg
+```
+
 
 Testing
 
-A small test file `small_test.txt` is included. Run:
+A small test file `small_test.txt`, and a medium one, `input.txt` are included. Run:
 
 ```bash
-./atomic_queue small_test.txt
+make test
 ```
 
 Notes
