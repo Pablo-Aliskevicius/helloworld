@@ -61,9 +61,8 @@ _Noreturn void producer_process(void) {
         if (mq_send(mq_b, (const char *)&i, sizeof(i), 0) == -1) {
             perror("producer: mq_send B");
         }
-         printf("[P: pid %d] produced %d\n", getpid(), i);
-        // small sleep to avoid flooding (and make output readable)
-        // usleep(10000);
+        printf("[P: pid %d] produced %d\n", getpid(), i);
+        fflush(stdout);
     }
 
     // Send termination marker (-1)
@@ -133,9 +132,15 @@ int initialize_signal_handlers(int* retFlag)
 {
     // Install signal handler for SIGUSR1
     *retFlag = EXIT_FAILURE;
-    struct sigaction sa;
-    memset(&sa, 0, sizeof(sa));
-    sa.sa_handler = sigusr1_handler;
+    // More elegant way to set up sigaction than memset(0), but will cause issues
+    // if ever the struct changes in future standards.
+    // Here as an example of designated initializers in C11, use memset in production code.
+    struct sigaction sa = {
+        .sa_handler = sigusr1_handler, 
+        .sa_flags = 0, 
+        .sa_mask.__val = { 0 }, // Another vote for memset, but shown here for completeness
+        .sa_restorer = NULL
+    };
     if (sigaction(SIGUSR1, &sa, NULL) == -1)
     {
         perror("sigaction");

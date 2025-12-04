@@ -18,6 +18,7 @@ Design & flow
 
 ASCII diagram
 
+```text
 Parent
   ├─ creates queues `/ipc_consumerA` `/ipc_consumerB`
   ├─ forks Producer (first)
@@ -28,6 +29,7 @@ Parent
   │    └─ reads from `/ipc_consumerA` → prints square
   └─ forks Consumer B
        └─ reads from `/ipc_consumerB` → prints prime check
+```
 
 Build
 
